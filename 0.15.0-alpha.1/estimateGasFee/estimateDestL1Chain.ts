@@ -1,5 +1,5 @@
 import { AxelarQueryAPI, Environment } from "@axelar-network/axelarjs-sdk";
-import { GAS_LIMIT, L1Chains, L2Chains } from "./constants";
+import { GAS_LIMIT, MAINNET_L1_CHAINS, MAINNET_L2_CHAINS } from "./constants";
 
 async function estimate(srcChain: string, destChain: string) {
   const sdk = new AxelarQueryAPI({
@@ -20,9 +20,9 @@ async function estimate(srcChain: string, destChain: string) {
 }
 
 export default async function run() {
-  const chainPairs = L2Chains.map((l2chain, index) => [
+  const chainPairs = MAINNET_L2_CHAINS.map((l2chain, index) => [
     l2chain,
-    L1Chains[index],
+    MAINNET_L1_CHAINS[index],
   ]);
   const fees = await Promise.all(
     chainPairs.map(([src, dest]) => estimate(src, dest))

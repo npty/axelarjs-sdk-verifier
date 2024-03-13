@@ -1,12 +1,18 @@
 import { AxelarQueryAPI, Environment } from "@axelar-network/axelarjs-sdk";
-import { GAS_LIMIT, L1Chains, L2Chains } from "./constants";
+import {
+  GAS_LIMIT,
+  MAINNET_L1_CHAINS,
+  MAINNET_L2_CHAINS,
+  TESTNET_L1_CHAINS,
+  TESTNET_L2_CHAINS,
+} from "./constants";
 
-async function estimate(srcChain: string, destChain: string) {
-  const sdk = new AxelarQueryAPI({
-    environment: Environment.MAINNET,
+async function estimate(env: Environment, srcChain: string, destChain: string) {
+  const client = new AxelarQueryAPI({
+    environment: env,
   });
 
-  const fee = await sdk.estimateGasFee(
+  const fee = await client.estimateGasFee(
     srcChain,
     destChain,
     GAS_LIMIT,
@@ -19,13 +25,19 @@ async function estimate(srcChain: string, destChain: string) {
   return fee as string;
 }
 
-export default async function run() {
-  const chainPairs = L1Chains.map((l1chain, index) => [
+export default async function run(env: Environment) {
+  const L1_CHAINS =
+    env === Environment.MAINNET ? MAINNET_L1_CHAINS : TESTNET_L1_CHAINS;
+  const L2_CHAINS =
+    env === Environment.MAINNET ? MAINNET_L2_CHAINS : TESTNET_L2_CHAINS;
+
+  const chainPairs = L1_CHAINS.map((l1chain, index) => [
     l1chain,
-    L2Chains[index],
+    L2_CHAINS[index],
   ]);
+
   const fees = await Promise.all(
-    chainPairs.map(([src, dest]) => estimate(src, dest))
+    chainPairs.map(([src, dest]) => estimate(env, src, dest))
   );
 
   return fees.map((fee, i) => [
