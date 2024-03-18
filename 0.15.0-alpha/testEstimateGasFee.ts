@@ -4,6 +4,9 @@ import {
   Environment,
 } from "@axelar-network/axelarjs-sdk";
 import { BigNumber, ethers } from "ethers";
+import { estimateTotalGasCost, estimateL1GasCost } from "@mantleio/sdk";
+
+console.warn = () => {};
 
 function getGasLimit(destChain: string) {
   switch (destChain) {
@@ -49,7 +52,38 @@ const actualExecutionFeesByDestChain = {
   mantle: "3308330944347", // Copy Transaction Fee (USD amount) from https://explorer.mantle.xyz/tx/0xd4f6627648dd7d4ab23537ae9020915c5ee870c8260938f13d9685b46a16a237, then paste it on the ETH converter https://www.coingecko.com/en/coins/ethereum to get ETH amount
 } as any;
 
-async function estimate(env: Environment, srcChain: string, destChain: string) {
+async function apiEstimate(srcChain: string, destChain: string) {
+  const gasLimit = getGasLimit(destChain);
+
+  const result: any = await fetch(
+    "https://api.axelarscan.io/gmp/estimateGasFee",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sourceChain: srcChain,
+        destinationChain: destChain,
+        gasLimit: gasLimit,
+        executeDta: getExecuteData(destChain),
+        showDetailedFees: true,
+        gasMultiplier: 1,
+      }),
+    }
+  ).then((res) => res.json());
+
+  return {
+    baseFee: result.baseFee,
+    totalFee: result.executionFee,
+  };
+}
+
+async function sdkEstimate(
+  env: Environment,
+  srcChain: string,
+  destChain: string
+) {
   const client = new AxelarQueryAPI({
     environment: env,
   });
@@ -82,41 +116,63 @@ async function estimate(env: Environment, srcChain: string, destChain: string) {
 
 export default async function test() {
   const srcChain = "ethereum";
-  const destChains = ["mantle", "optimism", "base", "scroll", "arbitrum"];
+  const destChains = [
+    "mantle",
+    "optimism",
+    "base",
+    "scroll",
+    "arbitrum",
+    "fraxtal",
+    "blast",
+  ];
 
-  const pendingFees = destChains.map((destChain) =>
-    estimate(Environment.MAINNET, srcChain, destChain)
+  const pendingSdkFees = destChains.map((destChain) =>
+    sdkEstimate(Environment.MAINNET, srcChain, destChain)
+  );
+  const pendingApiFees = destChains.map((destChain) =>
+    apiEstimate(srcChain, destChain)
   );
 
-  const fees = await Promise.all(pendingFees);
+  const sdkFees = await Promise.all(pendingSdkFees);
+  const apiFees = await Promise.all(pendingApiFees);
 
-  for (let i = 0; i < fees.length; i++) {
+  for (let i = 0; i < sdkFees.length; i++) {
     console.log(
       "\n================================================================="
     );
     console.log(
-      `baseFee for ${srcChain} to ${destChains[i]}: ${ethers.utils.formatEther(
-        fees[i].baseFee
-      )} ETH`
+      `[SDK] baseFee for ${srcChain} to ${
+        destChains[i]
+      }: ${ethers.utils.formatEther(sdkFees[i].baseFee)} ETH`
     );
     console.log(
-      `executionFee for ${srcChain} to ${
+      `[API] baseFee for ${srcChain} to ${
         destChains[i]
-      }: ${ethers.utils.formatEther(fees[i].executionFee)} ETH`
+      }: ${ethers.utils.formatEther(apiFees[i].baseFee)} ETH`
     );
-    console.log(
-      `l1ExecutionFee for ${srcChain} to ${
-        destChains[i]
-      }: ${ethers.utils.formatEther(fees[i].l1ExecutionFee)} ETH`
-    );
+    // console.log(
+    //   `executionFee for ${srcChain} to ${
+    //     destChains[i]
+    //   }: ${ethers.utils.formatEther(sdkFees[i].executionFee)} ETH`
+    // );
+    // console.log(
+    //   `l1ExecutionFee for ${srcChain} to ${
+    //     destChains[i]
+    //   }: ${ethers.utils.formatEther(sdkFees[i].l1ExecutionFee)} ETH`
+    // );
 
-    const totalExecutionFee = ethers.BigNumber.from(fees[i].executionFee).add(
-      fees[i].l1ExecutionFee
-    );
+    const totalExecutionFee = ethers.BigNumber.from(
+      sdkFees[i].executionFee
+    ).add(sdkFees[i].l1ExecutionFee);
     console.log(
-      `totalExecutionFee for ${srcChain} to ${
+      `[SDK] totalExecutionFee for ${srcChain} to ${
         destChains[i]
       }: ${ethers.utils.formatEther(totalExecutionFee)} ETH`
+    );
+    console.log(
+      `[API] totalExecutionFee for ${srcChain} to ${
+        destChains[i]
+      }: ${ethers.utils.formatEther(apiFees[i].totalFee)} ETH`
     );
     if (actualExecutionFeesByDestChain[destChains[i]]) {
       const actualExecutionFee = ethers.BigNumber.from(
@@ -132,7 +188,14 @@ export default async function test() {
       console.log(
         `Diff SDK Execution Fee vs Actual Execution Fee for ${
           destChains[i]
-        }: ${calculateDiffPercentage(actualExecutionFee, totalExecutionFee)} %`
+        }: ${calculateDiffPercentage(
+          actualExecutionFee,
+          totalExecutionFee
+        )} % (${
+          actualExecutionFee.lt(totalExecutionFee)
+            ? "SDK is more expensive"
+            : "SDK is cheaper"
+        })`
       );
     }
   }
