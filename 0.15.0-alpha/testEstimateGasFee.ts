@@ -3,10 +3,30 @@ import {
   AxelarQueryAPIFeeResponse,
   Environment,
 } from "@axelar-network/axelarjs-sdk";
+import { BigNumber, ethers } from "ethers";
 
 function getGasLimit(destChain: string) {
   return destChain === "mantle" ? 850_000_000 : 500_000;
 }
+
+function min(a: BigNumber, b: BigNumber) {
+  return a.lt(b) ? a : b;
+}
+
+function max(a: BigNumber, b: BigNumber) {
+  return a.gt(b) ? a : b;
+}
+
+function calculateDiffPercentage(actual: BigNumber, expected: BigNumber) {
+  const diff = max(actual, expected).sub(min(actual, expected)).toNumber();
+  const percent = (diff / actual.toNumber()) * 100;
+
+  return percent;
+}
+
+const actualExecutionFeesByDestChain = {
+  optimism: "3000000000000", // https://axelarscan.io/gmp/0xfd6ce98b4786d94efa10d6dd656cff410fa0333e13b7d4d0065fbfe5c7d94082:470
+} as any;
 
 async function estimate(env: Environment, srcChain: string, destChain: string) {
   const client = new AxelarQueryAPI({
@@ -54,13 +74,45 @@ export default async function test() {
       "\n================================================================="
     );
     console.log(
-      `baseFee for ${srcChain} to ${destChains[i]}: ${fees[i].baseFee}`
+      `baseFee for ${srcChain} to ${destChains[i]}: ${ethers.utils.formatEther(
+        fees[i].baseFee
+      )} ETH`
     );
     console.log(
-      `executionFee for ${srcChain} to ${destChains[i]}: ${fees[i].executionFee}`
+      `executionFee for ${srcChain} to ${
+        destChains[i]
+      }: ${ethers.utils.formatEther(fees[i].executionFee)} ETH`
     );
     console.log(
-      `l1ExecutionFee for ${srcChain} to ${destChains[i]}: ${fees[i].l1ExecutionFee}`
+      `l1ExecutionFee for ${srcChain} to ${
+        destChains[i]
+      }: ${ethers.utils.formatEther(fees[i].l1ExecutionFee)} ETH`
     );
+
+    const totalExecutionFee = ethers.BigNumber.from(fees[i].executionFee).add(
+      fees[i].l1ExecutionFee
+    );
+    console.log(
+      `totalExecutionFee for ${srcChain} to ${
+        destChains[i]
+      }: ${ethers.utils.formatEther(totalExecutionFee)} ETH`
+    );
+    if (actualExecutionFeesByDestChain[destChains[i]]) {
+      const actualExecutionFee = ethers.BigNumber.from(
+        actualExecutionFeesByDestChain[destChains[i]]
+      );
+
+      console.log(
+        `actualExecutionFee for ${srcChain} to ${
+          destChains[i]
+        }: ${ethers.utils.formatEther(actualExecutionFee)} ETH`
+      );
+
+      console.log(
+        `Diff SDK Execution Fee vs Actual Execution Fee for ${
+          destChains[i]
+        }: ${calculateDiffPercentage(actualExecutionFee, totalExecutionFee)} %`
+      );
+    }
   }
 }
