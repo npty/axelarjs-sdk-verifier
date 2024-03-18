@@ -6,7 +6,14 @@ import {
 import { BigNumber, ethers } from "ethers";
 
 function getGasLimit(destChain: string) {
-  return destChain === "mantle" ? 850_000_000 : 500_000;
+  switch (destChain) {
+    case "mantle":
+      return 850_000_000;
+    case "optimism":
+      return 118_406; // based on execution tx here https://axelarscan.io/gmp/0xfd6ce98b4786d94efa10d6dd656cff410fa0333e13b7d4d0065fbfe5c7d94082:470
+    default:
+      return 200_000;
+  }
 }
 
 function min(a: BigNumber, b: BigNumber) {
