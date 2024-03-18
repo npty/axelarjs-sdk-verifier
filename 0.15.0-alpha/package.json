@@ -1,9 +1,9 @@
 {
   "scripts": {
-    "test": "ts-node 0.15.0-alpha.1/index.ts"
+    "test": "ts-node index.ts"
   },
   "dependencies": {
-    "@axelar-network/axelarjs-sdk": "link:../axelajs-sdk",
+    "@axelar-network/axelarjs-sdk": "0.15.0-alpha.4",
     "@cosmjs/proto-signing": "^0.30.1",
     "ethers": "^5.7.2",
     "ts-node": "^10.9.1",
