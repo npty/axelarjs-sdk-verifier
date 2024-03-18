@@ -32,7 +32,7 @@ function calculateDiffPercentage(actual: BigNumber, expected: BigNumber) {
 }
 
 const actualExecutionFeesByDestChain = {
-  optimism: "3000000000000", // https://axelarscan.io/gmp/0xfd6ce98b4786d94efa10d6dd656cff410fa0333e13b7d4d0065fbfe5c7d94082:470
+  optimism: "2540000000000", // https://axelarscan.io/gmp/0xfd6ce98b4786d94efa10d6dd656cff410fa0333e13b7d4d0065fbfe5c7d94082:470
 } as any;
 
 async function estimate(env: Environment, srcChain: string, destChain: string) {
