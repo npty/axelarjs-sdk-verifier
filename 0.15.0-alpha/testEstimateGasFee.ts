@@ -58,6 +58,16 @@ function getExecuteData(destChain: string) {
   }
 }
 
+const gasPrice = {
+  optimism: "7833895",
+  mantle: "20000000",
+  blast: "970255",
+  fraxtal: "1000254",
+  base: "74400000",
+  scroll: "510000000",
+  arbitrum: "10000000",
+} as any;
+
 const actualExecutionFeesByDestChain = {
   optimism: "2540000000000", // https://axelarscan.io/gmp/0xfd6ce98b4786d94efa10d6dd656cff410fa0333e13b7d4d0065fbfe5c7d94082:470
   mantle: "3308330944347", // Copy Transaction Fee (USD amount) from https://explorer.mantle.xyz/tx/0xd4f6627648dd7d4ab23537ae9020915c5ee870c8260938f13d9685b46a16a237, then paste it on the ETH converter https://www.coingecko.com/en/coins/ethereum to get ETH amount
@@ -142,6 +152,9 @@ async function sdkEstimate(
     baseFee: feeDetails.baseFee,
     executionFee: feeDetails.executionFee,
     l1ExecutionFee: feeDetails.l1ExecutionFee,
+    gasPrice:
+      feeDetails.apiResponse.result.destination_native_token.gas_price_in_units
+        .value,
   };
 }
 
@@ -227,6 +240,26 @@ export default async function test() {
             ? "SDK is more expensive"
             : "SDK is cheaper"
         })`
+      );
+
+      const executedGasPrice = ethers.utils.formatUnits(
+        gasPrice[destChains[i]],
+        "gwei"
+      );
+      const currentGasPrice = ethers.utils.formatUnits(
+        sdkFees[i].gasPrice,
+        "gwei"
+      );
+
+      console.log(
+        `\nNote: Current Gas Price: ${currentGasPrice} gwei vs Executed Gas Price: ${executedGasPrice} gwei. ${
+          currentGasPrice < executedGasPrice
+            ? "Gas price is currently cheaper"
+            : "Gas price is currently more expensive"
+        } by ${calculateDiffPercentage(
+          ethers.BigNumber.from(sdkFees[i].gasPrice),
+          ethers.BigNumber.from(gasPrice[destChains[i]])
+        )} %`
       );
     }
   }
