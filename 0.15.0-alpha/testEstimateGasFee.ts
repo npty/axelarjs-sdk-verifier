@@ -257,8 +257,8 @@ export default async function test() {
             ? "Gas price is currently cheaper"
             : "Gas price is currently more expensive"
         } by ${calculateDiffPercentage(
-          ethers.BigNumber.from(sdkFees[i].gasPrice),
-          ethers.BigNumber.from(gasPrice[destChains[i]])
+          ethers.BigNumber.from(gasPrice[destChains[i]]),
+          ethers.BigNumber.from(sdkFees[i].gasPrice)
         )} %`
       );
     }
