@@ -12,9 +12,9 @@ const GAS_MULTIPLIER = 1;
 function getGasLimit(destChain: string) {
   switch (destChain) {
     case "mantle":
-      return 703_182_912; // based on a sample tx here https://explorer.mantle.xyz/tx/0xd4f6627648dd7d4ab23537ae9020915c5ee870c8260938f13d9685b46a16a237
+      return 703_182_912; // https://explorer.mantle.xyz/tx/0xd4f6627648dd7d4ab23537ae9020915c5ee870c8260938f13d9685b46a16a237
     case "optimism":
-      return 118_406; // based on execution tx here https://axelarscan.io/gmp/0xfd6ce98b4786d94efa10d6dd656cff410fa0333e13b7d4d0065fbfe5c7d94082:470
+      return 118_406; // https://optimistic.etherscan.io/tx/0xa690c312d7535718a3ed5890855be32f1c6776c6f12dfa16485e058fbe1af5e2
     case "blast":
       return 211_356; // https://blastscan.io/tx/0xd15a62a0231f3907cf9406b61f1ca134e931d9b7244813fca476e5664cfb42df
     case "fraxtal":

@@ -1,0 +1,5 @@
+{
+	"dependencies": {
+		"@axelar-network/axelarjs-sdk": "0.15.0-alpha.5"
+	}
+}
