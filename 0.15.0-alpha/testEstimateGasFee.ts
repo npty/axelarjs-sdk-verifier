@@ -7,6 +7,8 @@ import { BigNumber, ethers } from "ethers";
 
 console.warn = () => {};
 
+const GAS_MULTIPLIER = 1;
+
 function getGasLimit(destChain: string) {
   switch (destChain) {
     case "mantle":
@@ -97,7 +99,7 @@ async function apiEstimate(srcChain: string, destChain: string) {
         gasLimit: gasLimit,
         executeData: getExecuteData(destChain),
         showDetailedFees: true,
-        gasMultiplier: 1,
+        gasMultiplier: GAS_MULTIPLIER,
       }),
     }
   ).then((res) => res.json());
@@ -122,7 +124,7 @@ async function sdkEstimate(
     srcChain,
     destChain,
     gasLimit,
-    1,
+    GAS_MULTIPLIER,
     undefined,
     undefined,
     getExecuteData(destChain),
