@@ -3,11 +3,14 @@ import {
   AxelarQueryAPIFeeResponse,
   Environment,
 } from "@axelar-network/axelarjs-sdk";
+import { createAxelarQueryClient, EstimateGasFeeResponse } from "@axelarjs/api";
 import { BigNumber, ethers } from "ethers";
 
 console.warn = () => {};
 
 const GAS_MULTIPLIER = 1;
+
+const sdkV2Client = createAxelarQueryClient(Environment.MAINNET);
 
 function getGasLimit(destChain: string) {
   switch (destChain) {
@@ -120,6 +123,27 @@ async function apiEstimate(srcChain: string, destChain: string) {
   };
 }
 
+async function sdkV2Estimate(
+  env: Environment,
+  srcChain: string,
+  destChain: string
+) {
+  const fee = (await sdkV2Client.estimateGasFee({
+    sourceChain: srcChain,
+    destinationChain: destChain,
+    gasLimit: BigInt(getGasLimit(destChain)),
+    executeData: getExecuteData(destChain),
+    gasMultiplier: GAS_MULTIPLIER,
+    showDetailedFees: true,
+  })) as EstimateGasFeeResponse;
+
+  return {
+    baseFee: fee.baseFee,
+    executionFee: fee.executionFee,
+    l1ExecutionFee: fee.l1ExecutionFee,
+  };
+}
+
 async function sdkEstimate(
   env: Environment,
   srcChain: string,
@@ -173,11 +197,15 @@ export default async function test() {
   const pendingSdkFees = destChains.map((destChain) =>
     sdkEstimate(Environment.MAINNET, srcChain, destChain)
   );
+  const pendingSdkV2Fees = destChains.map((destChain) =>
+    sdkV2Estimate(Environment.MAINNET, srcChain, destChain)
+  );
   const pendingApiFees = destChains.map((destChain) =>
     apiEstimate(srcChain, destChain)
   );
 
   const sdkFees = await Promise.all(pendingSdkFees);
+  const sdkV2Fees = await Promise.all(pendingSdkV2Fees);
   const apiFees = await Promise.all(pendingApiFees);
 
   for (let i = 0; i < sdkFees.length; i++) {
@@ -188,6 +216,11 @@ export default async function test() {
       `[SDK] baseFee for ${srcChain} to ${
         destChains[i]
       }: ${ethers.utils.formatEther(sdkFees[i].baseFee)} ETH`
+    );
+    console.log(
+      `[SDKV2] baseFee for ${srcChain} to ${
+        destChains[i]
+      }: ${ethers.utils.formatEther(sdkV2Fees[i].baseFee)} ETH`
     );
     console.log(
       `[API] baseFee for ${srcChain} to ${
@@ -208,10 +241,19 @@ export default async function test() {
     const totalExecutionFee = ethers.BigNumber.from(
       sdkFees[i].executionFee
     ).add(sdkFees[i].l1ExecutionFee);
+    const totalExecutionFeeV2 = ethers.BigNumber.from(
+      sdkV2Fees[i].executionFee
+    ).add(sdkV2Fees[i].l1ExecutionFee);
+
     console.log(
       `[SDK] totalExecutionFee for ${srcChain} to ${
         destChains[i]
       }: ${ethers.utils.formatEther(totalExecutionFee)} ETH`
+    );
+    console.log(
+      `[SDKV2] totalExecutionFee for ${srcChain} to ${
+        destChains[i]
+      }: ${ethers.utils.formatEther(totalExecutionFeeV2)} ETH`
     );
     console.log(
       `[API] totalExecutionFee for ${srcChain} to ${
