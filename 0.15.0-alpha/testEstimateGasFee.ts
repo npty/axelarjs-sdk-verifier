@@ -192,13 +192,13 @@ export default async function test() {
       );
 
       console.log(
-        `actualExecutionFee for ${srcChain} to ${
+        `[Actual] toalExecutionFee for ${srcChain} to ${
           destChains[i]
         }: ${ethers.utils.formatEther(actualExecutionFee)} ETH`
       );
 
       console.log(
-        `Diff SDK Execution Fee vs Actual Execution Fee for ${
+        `Execution Fee SDK vs Actual Cost for ${
           destChains[i]
         }: ${calculateDiffPercentage(
           actualExecutionFee,
