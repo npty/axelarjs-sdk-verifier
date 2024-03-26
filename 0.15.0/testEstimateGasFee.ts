@@ -77,7 +77,7 @@ const gasPriceL1 = {
   blast: 31.069258398 * 1e9,
   fraxtal: 29.520446908 * 1e9,
   base: 32.699095404 * 1e9,
-  scroll: 6.321919057944329 * 1e9,
+  scroll: 30.461919057944329 * 1e9,
   arbitrum: 0,
 } as any;
 
@@ -259,7 +259,7 @@ export default async function test() {
     ).add(sdkV2Fees[i].l1ExecutionFee);
 
     console.log(
-      `[SDK] totalExecutionFee for ${srcChain} to ${
+      `\n[SDK] totalExecutionFee for ${srcChain} to ${
         destChains[i]
       }: ${ethers.utils.formatEther(totalExecutionFee)} ETH`
     );
@@ -279,7 +279,7 @@ export default async function test() {
       );
 
       console.log(
-        `[Actual] totalExecutionFee for ${srcChain} to ${
+        `\n[Actual] totalExecutionFee for ${srcChain} to ${
           destChains[i]
         }: ${ethers.utils.formatEther(actualExecutionFee)} ETH`
       );
@@ -318,7 +318,7 @@ export default async function test() {
 
       console.log(
         `\nNote: Current L2 Gas Price: ${currentGasPrice} gwei vs Executed Gas Price: ${executedGasPrice} gwei. ${
-          currentGasPrice < executedGasPrice
+          sdkFees[i].gasPrice < gasPrice[destChains[i]]
             ? "Gas price is currently cheaper"
             : "Gas price is currently more expensive"
         } by ${calculateDiffPercentage(
@@ -330,13 +330,42 @@ export default async function test() {
       if (gasPriceL1Int) {
         console.log(
           `Note: Current L1 Gas Price: ${currentGasPriceL1} gwei vs Executed Gas Price: ${executedGasPriceL1} gwei. ${
-            currentGasPriceL1 < executedGasPriceL1
+            sdkFees[i].l1GasPrice < gasPriceL1Int
               ? "Gas price is currently cheaper"
               : "Gas price is currently more expensive"
           } by ${calculateDiffPercentage(
             ethers.BigNumber.from(gasPriceL1Int),
             ethers.BigNumber.from(sdkFees[i].l1GasPrice)
           )} %`
+        );
+
+        console.log("\nAfter adjusting fees for current gas prices:");
+        const adjustedL2ExecutionFee = BigNumber.from(sdkFees[i].executionFee)
+          .mul(gasPrice[destChains[i]])
+          .div(sdkFees[i].gasPrice);
+        const adjustedL1ExecutionFee = BigNumber.from(sdkFees[i].l1ExecutionFee)
+          .mul(gasPriceL1Int)
+          .div(sdkFees[i].l1GasPrice);
+        const adjustedTotalExecutionFee = adjustedL2ExecutionFee.add(
+          adjustedL1ExecutionFee
+        );
+
+        console.log(
+          `\n[SDK] totalExecutionFee for ${srcChain} to ${
+            destChains[i]
+          }: ${ethers.utils.formatEther(adjustedTotalExecutionFee)} ETH`
+        );
+        console.log(
+          `Execution Fee SDK vs Actual Cost for ${
+            destChains[i]
+          }: ${calculateDiffPercentage(
+            actualExecutionFee,
+            adjustedTotalExecutionFee
+          )} % (${
+            actualExecutionFee.lt(adjustedTotalExecutionFee)
+              ? "SDK is more expensive"
+              : "SDK is cheaper"
+          })`
         );
       }
     }
