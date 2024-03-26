@@ -71,6 +71,16 @@ const gasPrice = {
   arbitrum: "10000000",
 } as any;
 
+const gasPriceL1 = {
+  optimism: 40.229321873 * 1e9,
+  mantle: 23.769102605 * 1e9,
+  blast: 31.069258398 * 1e9,
+  fraxtal: 29.520446908 * 1e9,
+  base: 32.699095404 * 1e9,
+  scroll: 6.321919057944329 * 1e9,
+  arbitrum: 0,
+} as any;
+
 const actualExecutionFeesByDestChain = {
   optimism: "2540000000000", // https://axelarscan.io/gmp/0xfd6ce98b4786d94efa10d6dd656cff410fa0333e13b7d4d0065fbfe5c7d94082:470
   mantle: "3308330944347", // Copy Transaction Fee (USD amount) from https://explorer.mantle.xyz/tx/0xd4f6627648dd7d4ab23537ae9020915c5ee870c8260938f13d9685b46a16a237, then paste it on the ETH converter https://www.coingecko.com/en/coins/ethereum to get ETH amount
@@ -179,6 +189,9 @@ async function sdkEstimate(
     gasPrice:
       feeDetails.apiResponse.result.destination_native_token.gas_price_in_units
         .value,
+    l1GasPrice:
+      feeDetails.apiResponse.result.destination_native_token
+        .l1_gas_price_in_units?.value || "0",
   };
 }
 
@@ -293,8 +306,18 @@ export default async function test() {
         "gwei"
       );
 
+      const gasPriceL1Int = Math.ceil(gasPriceL1[destChains[i]]);
+      const executedGasPriceL1 = ethers.utils.formatUnits(
+        gasPriceL1Int,
+        "gwei"
+      );
+      const currentGasPriceL1 = ethers.utils.formatUnits(
+        sdkFees[i].l1GasPrice,
+        "gwei"
+      );
+
       console.log(
-        `\nNote: Current Gas Price: ${currentGasPrice} gwei vs Executed Gas Price: ${executedGasPrice} gwei. ${
+        `\nNote: Current L2 Gas Price: ${currentGasPrice} gwei vs Executed Gas Price: ${executedGasPrice} gwei. ${
           currentGasPrice < executedGasPrice
             ? "Gas price is currently cheaper"
             : "Gas price is currently more expensive"
@@ -303,6 +326,19 @@ export default async function test() {
           ethers.BigNumber.from(sdkFees[i].gasPrice)
         )} %`
       );
+
+      if (gasPriceL1Int) {
+        console.log(
+          `Note: Current L1 Gas Price: ${currentGasPriceL1} gwei vs Executed Gas Price: ${executedGasPriceL1} gwei. ${
+            currentGasPriceL1 < executedGasPriceL1
+              ? "Gas price is currently cheaper"
+              : "Gas price is currently more expensive"
+          } by ${calculateDiffPercentage(
+            ethers.BigNumber.from(gasPriceL1Int),
+            ethers.BigNumber.from(sdkFees[i].l1GasPrice)
+          )} %`
+        );
+      }
     }
   }
 }
