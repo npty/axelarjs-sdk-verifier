@@ -3,7 +3,7 @@
     "test": "ts-node index.ts"
   },
   "dependencies": {
-    "@axelar-network/axelarjs-sdk": "link:../../axelajs-sdk",
+    "@axelar-network/axelarjs-sdk": "^0.15.0",
     "@axelarjs/api": "0.0.0-snapshot.b521d08",
     "@cosmjs/proto-signing": "^0.30.1",
     "@mantleio/sdk": "^1.0.3",
