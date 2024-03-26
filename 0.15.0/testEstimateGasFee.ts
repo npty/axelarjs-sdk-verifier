@@ -195,17 +195,18 @@ async function sdkEstimate(
   };
 }
 
-export default async function test() {
+const defaultDestChains = [
+  "mantle",
+  "optimism",
+  "base",
+  "scroll",
+  "arbitrum",
+  "fraxtal",
+  "blast",
+];
+
+export default async function test(destChains: string[] = defaultDestChains) {
   const srcChain = "ethereum";
-  const destChains = [
-    "mantle",
-    "optimism",
-    "base",
-    "scroll",
-    "arbitrum",
-    "fraxtal",
-    "blast",
-  ];
 
   const pendingSdkFees = destChains.map((destChain) =>
     sdkEstimate(Environment.MAINNET, srcChain, destChain)
