@@ -1,18 +1,8 @@
 import runEstimateGasFeeTest from "./testEstimateGasFee";
+import runEstimateOsmosisTest from "./testOsmosisGas";
 import runManualRelayToDestChain from "./testManualRelayToDestChain";
 
 (async () => {
-  for (let i = 0; i < 10; i++) {
-    console.log(
-      "\n\n ### Test round:",
-      i + 1,
-      `${new Date().toLocaleTimeString()} ###`
-    );
-    const destChains = ["fraxtal", "blast"];
-    await runEstimateGasFeeTest(destChains);
-
-    // wait 60s
-    await new Promise((resolve) => setTimeout(resolve, 60000));
-  }
+  await runEstimateGasFeeTest("ethereum");
   // await runManualRelayToDestChain();
 })();

@@ -205,9 +205,12 @@ const defaultDestChains = [
   "blast",
 ];
 
-export default async function test(destChains: string[] = defaultDestChains) {
-  const srcChain = "ethereum";
+const defaultSrcChain = "ethereum";
 
+export default async function test(
+  srcChain: string = defaultSrcChain,
+  destChains: string[] = defaultDestChains
+) {
   const pendingSdkFees = destChains.map((destChain) =>
     sdkEstimate(Environment.MAINNET, srcChain, destChain)
   );
@@ -293,6 +296,18 @@ export default async function test(destChains: string[] = defaultDestChains) {
           totalExecutionFee
         )} % (${
           actualExecutionFee.lt(totalExecutionFee)
+            ? "SDK is more expensive"
+            : "SDK is cheaper"
+        })`
+      );
+      console.log(
+        `Execution Fee SDK vs API for ${
+          destChains[i]
+        }: ${calculateDiffPercentage(
+          ethers.BigNumber.from(apiFees[i].totalFee),
+          totalExecutionFee
+        )} % (${
+          apiFees[i].totalFee < totalExecutionFee
             ? "SDK is more expensive"
             : "SDK is cheaper"
         })`
